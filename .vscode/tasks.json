@@ -1,0 +1,61 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Make yml compiler",
+            "type": "shell",
+            "command": "g++ -Wall -std=c++20 rnd/desugar-yml.cpp -o rnd/.build/desugar-yml",
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Expand hardware descriptors",
+            "type": "shell",
+            // "command": "./rnd/.build/desugar-yml hw-description/default_zones.yml rnd/base_syntax.expanded.dot",
+            "command": "./rnd/.build/desugar-yml rnd/base_syntax.yml rnd/base_syntax.expanded.dot",
+            "problemMatcher": [],
+            "dependsOn": ["Make yml compLINE_BUFFER_BASE_SIZEiler"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Compile Sketch",
+            "type": "shell",
+            "command": "arduino-cli compile --warnings all --verify -e --build-path ~/build.Arduino/Teensy4.1-APC40.build Teensy4.1-APC40",
+            "problemMatcher": [],
+            "options": {
+                "cwd": "/home/tomato/Arduino"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Upload Sketch",
+            "type": "shell",
+            "command": "arduino-cli upload -b teensy:avr:teensy41 -p usb1/1-9/1-9.4/1-9.4.1 --input-dir ~/build.Arduino/Teensy4.1-APC40.build/ -v -t",
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Compile and Upload",
+            "dependsOrder": "sequence",
+            "dependsOn": ["Compile Sketch", "Upload Sketch"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}

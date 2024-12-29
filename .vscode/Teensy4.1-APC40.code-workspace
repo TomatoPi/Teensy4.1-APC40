@@ -1,0 +1,26 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"path": "../../../build.Arduino/Teensy4.1-APC40.build"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"ostream": "cpp",
+			"array": "c",
+			"hash_map": "c",
+			"bitset": "c",
+			"string_view": "c",
+			"format": "c",
+			"initializer_list": "c",
+			"span": "c",
+			"iosfwd": "cpp",
+			"cstdint": "cpp",
+			"cerrno": "cpp",
+			"*.tcc": "cpp"
+		}
+	}
+}

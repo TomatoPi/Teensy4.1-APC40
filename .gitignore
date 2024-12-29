@@ -1,0 +1,10 @@
+libraries/
+find_slaves/
+*.aux
+*.synctex.gz
+*.fdb_latexmk
+*.fls
+*.log
+
+rnd/
+.old/
