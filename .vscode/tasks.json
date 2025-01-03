@@ -26,9 +26,22 @@
             }
         },
         {
+            "label": "BuildTests",
+            "type": "shell",
+            "command": "bash unit_tests/run_tests.sh",
+            "problemMatcher": [],
+            "options": {
+                "cwd": "/home/tomato/Arduino/Teensy4.1-APC40"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
             "label": "Compile Sketch",
             "type": "shell",
-            "command": "arduino-cli compile --warnings all --verify -e --build-path ~/build.Arduino/Teensy4.1-APC40.build Teensy4.1-APC40",
+            "command": "arduino-cli compile --warnings all --verify -e --build-path ~/build.Arduino/Teensy4.1-APC40.build Teensy4.1-APC40 --verbose",
             "problemMatcher": [],
             "options": {
                 "cwd": "/home/tomato/Arduino"

@@ -1,0 +1,203 @@
+digraph {
+
+    node [shape=component];
+    edge [labeldistance=1.0];
+
+    sketch;
+
+subgraph cluster_hardware {
+    label="Hardware Specific Code";
+    
+    hwdriver;
+
+
+    subgraph cluster_rawio
+        {
+            label="Hardware Specific Libraries"
+            subgraph cluster_i2c
+                {
+                label="I2C"
+                node [shape=component]
+                    i2c_bus
+                    async_i2c_bus
+
+                node [shape=signature color=red]
+                    {
+                        rank=same
+                        device_addr
+                        message
+                        message_size
+                    }
+                edge []
+                    i2c_bus -> device_addr
+                    i2c_bus -> message
+                    i2c_bus -> message_size
+                }
+
+                raw_gpio
+
+            node [shape=signature color=red]
+
+                raw_pin
+
+            edge [color=red]
+
+                raw_gpio -> raw_pin
+        }
+        
+    subgraph cluster_hwo
+        {
+            label="Outputs drivers";
+
+        node [shape=component];
+            outputs_driver      [label="Leds Driver"];
+            output_addr_decoder;
+
+            hwdriver -> outputs_driver;
+
+        node [shape=box3d color=blue];
+
+            led_state;
+            led_color;
+            ring_state;
+
+            led_color -> led_state;
+            ring_state -> led_state;
+
+        node [shape=signature color=red];
+
+            led_addr;
+
+            {
+                rank=same;
+                cathode_addr;
+                annode_addr;
+                three_bits_addr [label="3bits addr"];
+            };
+
+            driver_addr;
+            driver_register_index;
+            driver_register_bit_index;
+
+        edge [];
+
+            outputs_driver -> led_addr;
+
+            output_addr_decoder -> three_bits_addr;
+
+            led_addr -> cathode_addr;
+            led_addr -> annode_addr;
+            
+            cathode_addr -> three_bits_addr;
+
+            annode_addr -> driver_addr;
+            annode_addr -> driver_register_index;
+            annode_addr -> driver_register_bit_index;
+        }
+
+    subgraph cluster_hwi
+        {
+            label="Inputs drivers"
+
+        node [shape=component]
+            subgraph {
+                rank=same
+
+                pads_logic
+                encoder_logic
+                analog_logic
+            }
+
+            quadrature_decoder
+            analog_multiplexer
+            inputs_addr_decoder
+
+        node [shape=box3d color=blue]
+            encoder_speed
+            pad_state
+            analog_value
+
+        node [shape=signature color=red];
+
+            encoder_addr
+
+            { rank=same;
+            encoder_pinA
+            encoder_pinB
+            }
+
+            { rank=same;
+            // raw_pin
+            enc_three_bits_addr [label="3bits addr"];
+            }
+
+        edge [color=blue]
+
+            quadrature_decoder -> encoder_speed
+            pads_logic -> pad_state
+            analog_logic -> analog_value
+
+        edge [color=gray]
+
+            encoder_addr -> encoder_pinA
+            encoder_addr -> encoder_pinB
+
+            encoder_pinA -> raw_pin
+            encoder_pinA -> enc_three_bits_addr
+            encoder_pinB -> raw_pin
+            encoder_pinB -> enc_three_bits_addr
+
+        edge [color=red];
+
+            quadrature_decoder -> encoder_addr
+            inputs_addr_decoder -> enc_three_bits_addr
+            analog_multiplexer -> raw_pin
+        }
+}
+
+    subgraph cluster_utils
+        {
+            label="Utility Custom Libraries"
+            async_logic
+        }
+
+    sketch -> hwdriver
+    sketch -> swdriver
+
+    outputs_driver -> led_state
+    outputs_driver -> led_color
+    outputs_driver -> ring_state
+
+    outputs_driver -> async_i2c_bus         [label="anodes driver"]
+    outputs_driver -> output_addr_decoder  [label="cathodes driver"]
+
+    async_i2c_bus -> i2c_bus
+    async_i2c_bus -> async_logic
+
+    hwdriver -> pads_logic
+    hwdriver -> encoder_logic
+    hwdriver -> analog_logic
+
+    pads_logic -> raw_gpio      [label="source_poll"]
+    pads_logic -> inputs_addr_decoder  [label="sink_select"]
+
+    encoder_logic -> quadrature_decoder
+    quadrature_decoder -> analog_multiplexer
+
+    analog_logic -> analog_multiplexer
+
+    analog_multiplexer -> inputs_addr_decoder  [label="pin_select"]
+    analog_multiplexer -> raw_gpio      [label="pin_poll"]
+
+    inputs_addr_decoder -> raw_gpio [label="addr_write"]
+    output_addr_decoder -> raw_gpio [label="addr_write"]
+
+
+subgraph cluster_software
+{
+    label="Software Logic / User Interface"
+    swdriver -> led_animations -> async_logic
+    swdriver -> user_action -> action_combos -> async_logic
+
+}
+}

@@ -1,0 +1,82 @@
+digraph {
+    rankdir=LR
+
+    setup
+
+    node[shape=component]
+    begin_serial
+    init_sd_card
+
+    setup_leds_driver
+    configure_i2c_buses
+    configure_mcp_registers
+
+    begin_midi
+
+    node[shape=house]
+    init_logger
+    load_config
+    configure_hardware
+    configure_software
+
+    node[shape=box3d]
+
+    setup -> init_logger
+
+    init_logger -> begin_serial
+    init_logger -> init_sd_card [color=blue]
+    init_sd_card -> log_to_file [color=blue] [label=success]
+
+    begin_serial -> log_to_serial [label="success"]
+
+    setup -> load_config
+
+    load_config -> init_sd_card [color=green]
+    init_sd_card -> load_config_file [color=green, label="success"]
+    init_sd_card -> load_defaults [color=green, label="failure"]
+
+    load_config_file -> configure_hardware 
+    load_defaults -> configure_hardware
+
+    configure_hardware -> setup_leds_driver
+
+    setup_leds_driver -> configure_i2c_buses
+    configure_i2c_buses -> configure_mcp_registers
+    setup_leds_driver -> configure_raw_gpio [color=red]
+
+    configure_raw_gpio -> init_state        [color=red]
+    configure_mcp_registers -> init_state
+    
+    configure_hardware -> setup_pads_driver -> configure_raw_gpio [color=violet]
+    configure_raw_gpio -> init_control_surface [color=violet]
+
+    init_control_surface -> setup_action_timers
+    init_control_surface -> setup_actions_stack
+
+
+    configure_hardware -> setup_encoders_driver -> configure_raw_gpio [color=aqua]
+    configure_raw_gpio -> setup_quadrature_decoders [color=aqua]
+    
+    configure_hardware -> setup_analog -> configure_raw_gpio
+
+    configure_hardware -> setup_midi -> begin_midi
+
+    configure_hardware -> setup_error_led -> configure_raw_gpio
+
+    {
+        rank=same
+        configure_hardware
+        configure_software
+    }
+
+    configure_hardware -> configure_software [color=gray, label="success"]
+    load_config_file -> configure_software
+    load_defaults -> configure_software
+
+    {
+        rank=same
+        init_state
+        init_control_surface
+        setup_quadrature_decoders
+    }
+}
