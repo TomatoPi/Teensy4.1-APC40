@@ -7,21 +7,21 @@
 namespace containers
 {
 
-    /** Move constructor: move _datas and preserve structure */
-template <typename ValueT>
-double_linked_node<ValueT>::double_linked_node(double_linked_node&& list)
-    : double_linked_node(std::move(list._datas))
-    {
-        if (!list.is_empty())
-            {
-                /** Swaps this node with the new one */
-                _next = list._next;
-                _prev = list._prev;
-                _next->_prev = this;
-                _prev->_next = this;
-                list._next = list._prev = &list;
-            }
-    }
+//     /** Move constructor: move _datas and preserve structure */
+// template <typename ValueT>
+// double_linked_node<ValueT>::double_linked_node(double_linked_node&& list)
+//     : double_linked_node(std::move(list._datas))
+//     {
+//         if (!list.is_empty())
+//             {
+//                 /** Swaps this node with the new one */
+//                 _next = list._next;
+//                 _prev = list._prev;
+//                 _next->_prev = this;
+//                 _prev->_next = this;
+//                 list._next = list._prev = &list;
+//             }
+//     }
 
     /** Destructor: remove node from any linked list to prevent weird behavior */
 template <typename ValueT>

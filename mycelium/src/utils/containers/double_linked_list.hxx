@@ -49,16 +49,16 @@ public:
         {}
 
     /** Disable Copy construction: hardly definable behaviour */
-    double_linked_node(const double_linked_node& list) = delete;
+    double_linked_node(const double_linked_node& list)              = delete;
 
     /** Disable Copy assignement operator: hardly definable behaviour */
-    double_linked_node& operator=(const double_linked_node& list) = delete;
+    double_linked_node& operator=(const double_linked_node& list)   = delete;
     
     /** Move constructor: move _datas and preserve structure */
-    double_linked_node(double_linked_node&& list);
+    double_linked_node(double_linked_node&& list)                   = delete;
     
     /** Disable Move assignement operator: hardly definable behaviour on non empty destination */
-    double_linked_node& operator=(double_linked_node&& list) = delete;
+    double_linked_node& operator=(double_linked_node&& list)        = delete;
 
     /** Destructor: remove node from any linked list to prevent weird behavior */
     ~double_linked_node();
