@@ -30,7 +30,7 @@ class double_linked_node
 public:
     using value_type = ValueT;
     using type = double_linked_node<value_type>;
-    // using context_type = typename mycelium::contextof<type>::type;
+    using context = typename mycelium::contextof<type>::type;
 
     friend class anchored_list<ValueT>;
 
@@ -39,8 +39,8 @@ private:
     value_type* _datas;
 
     /** internal members */
-    mutable double_linked_node* _prev;
-    mutable double_linked_node* _next;
+    double_linked_node* _prev;
+    double_linked_node* _next;
 
 public:
     /** default contructor */
@@ -54,7 +54,7 @@ public:
     /** Disable Copy assignement operator: hardly definable behaviour */
     double_linked_node& operator=(const double_linked_node& list)   = delete;
     
-    /** Move constructor: move _datas and preserve structure */
+    /** Disable Move constructor */
     double_linked_node(double_linked_node&& list)                   = delete;
     
     /** Disable Move assignement operator: hardly definable behaviour on non empty destination */
@@ -146,7 +146,7 @@ class anchored_list
 public:
     using value_type = ValueT;
     using type = anchored_list<value_type>;
-    // using context_type = typename mycelium::contextof<type>::type;
+    using context = typename mycelium::contextof<type>::type;
 
     using node_type = typename double_linked_node<value_type>::type;
 

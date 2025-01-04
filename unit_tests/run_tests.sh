@@ -15,6 +15,7 @@ mkdir -p $LOGSDIR
 
 LOGFILE="$LOGSDIR/dllist.log"
 
+echo "Testing $dllist"
 date > $LOGFILE
 g++ -g -Wall -Werror -Imycelium/src/ $TESTDIR/$dllist.cpp -o $BUILDIDR/$dllist >> $LOGFILE && $BUILDIDR/$dllist >> $LOGFILE
 date >> $LOGFILE
@@ -22,6 +23,7 @@ date >> $LOGFILE
 
 LOGFILE="$LOGSDIR/queues.log"
 
+echo "Testing $queues"
 date > $LOGFILE
 g++ -g -Wall -Werror -Imycelium/src/ $TESTDIR/$queues.cpp -o $BUILDIDR/$queues >> $LOGFILE && $BUILDIDR/$queues >> $LOGFILE
 date >> $LOGFILE

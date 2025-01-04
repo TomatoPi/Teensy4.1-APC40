@@ -5,11 +5,17 @@
 #include "queues.hxx"
 
 #include <algorithm>
-#include <cassert>
-#include <iostream>
 
 namespace containers
 {
+
+
+template <typename ValueT, typename ComparatorT, size_t SIZE>
+bool
+Heap<ValueT, ComparatorT, SIZE>::comparator_type::operator() (const node_type* lhs, const node_type* rhs) const
+    {
+        return ComparatorT{}(lhs->value(), rhs->value());
+    }
 
 template <typename ValueT, typename ComparatorT, size_t SIZE>
 typename Heap<ValueT, ComparatorT, SIZE>::value_type
@@ -19,14 +25,10 @@ Heap<ValueT, ComparatorT, SIZE>::node_type::operator= (value_type val)
         if (is_orphan())
             { return val; /* no heap to preserve */ }
 
-        // if (this < _heap->_nodes.data() || _heap->_nodes.data() + _heap->_size <= this)
-        //     { return; /* TODO: raise INVALID_STATE */}
-
-        // size_t index = _heap->_nodes.data() - this;
         if (_heap->_size <= _index || _heap->_nodes[_index] != this)
-            { return val; assert(false); /* TODO: raise INVALID_STATE */ }
+            { return val; context::assert_error(false); /* TODO: raise INVALID_STATE */ }
 
-        /** dirty but in a correct heap, shifts are no-ops */
+        /** might looks dirty but in a correct heap, shifts are no-ops */
         _heap->shift_up(_index);
         _heap->shift_down(_index);
 
@@ -39,16 +41,11 @@ Heap<ValueT, ComparatorT, SIZE>::node_type::pop_self()
     {
         if (nullptr == _heap)
             { return; }
-        
-        // if (this < _heap->_nodes.data() || _heap->_nodes.data() + _heap->_size <= this)
-        //     { return; /* TODO: raise INVALID_STATE */}
-
-        // size_t index = _heap->_nodes.data() - this;
 
         if (_heap->_size <= _index || _heap->_nodes[_index] != this)
             { return; assert(false); /* TODO: raise INVALID_STATE */ }
-        size_t last = _heap->_size -1;
 
+        size_t last = _heap->_size -1;
         if (last != _index)
             {
                 std::swap(_heap->_nodes[_index], _heap->_nodes[last]);
@@ -67,13 +64,6 @@ Heap<ValueT, ComparatorT, SIZE>::node_type::pop_self()
     }
 
 template <typename ValueT, typename ComparatorT, size_t SIZE>
-bool
-Heap<ValueT, ComparatorT, SIZE>::comparator_type::operator() (const node_type* lhs, const node_type* rhs) const
-    {
-        return ComparatorT{}(lhs->value(), rhs->value());
-    }
-
-template <typename ValueT, typename ComparatorT, size_t SIZE>
 Heap<ValueT, ComparatorT, SIZE>::Heap()
     : _nodes{}, _size{0}
     {
@@ -88,13 +78,13 @@ Heap<ValueT, ComparatorT, SIZE>::~Heap()
     }
 
 template <typename ValueT, typename ComparatorT, size_t SIZE>
-void
+bool
 Heap<ValueT, ComparatorT, SIZE>::push(node_type& node)
     {
         if (!node.is_orphan())
-            { return; /* TODO: raise INVALID_ARGUMENT */ }
+            { return false; /* TODO: raise INVALID_ARGUMENT */ }
         if (SIZE_MAX <= _size)
-            { return; /* TODO: raise MEMORY_ERROR */ }
+            { return false; /* TODO: raise MEMORY_ERROR */ }
 
         size_t index=_size;
         _nodes[index] = &node;
@@ -103,6 +93,7 @@ Heap<ValueT, ComparatorT, SIZE>::push(node_type& node)
         _size += 1;
 
         shift_up(index);
+        return true;
     }
 
 template <typename ValueT, typename ComparatorT, size_t SIZE>

@@ -48,7 +48,7 @@ public:
     node_type* next()               { return this->front(); }
     const node_type* next() const   { return this->front(); }
 
-    void push(node_type& node)      { this->push_front(node); }
+    bool push(node_type& node)      { this->push_front(node); return true; }
 
     void pop()                      { if (!is_empty()) { next()->pop_self(); } }
 
@@ -75,7 +75,7 @@ public:
     node_type* next()               { return this->front(); }
     const node_type* next() const   { return this->front(); }
 
-    void push(node_type& node)      { this->push_back(node); }
+    bool push(node_type& node)      { this->push_back(node); return true; }
 
     void pop()                      { if (!is_empty()) { next()->pop_self(); } }
 
@@ -94,7 +94,8 @@ public:
     static constexpr const size_t SIZE_MAX = SIZE;
 
     using value_type = ValueT;
-    
+    using context = typename mycelium::contextof<type>::type;
+
     /**
      * Specialise node type to prevent the priority queue from going into a bad state
      */
@@ -161,7 +162,7 @@ public:
     node_type* next()               { return is_empty() ? nullptr : _nodes[0]; }
     const node_type* next() const   { return is_empty() ? nullptr : _nodes[0]; }
 
-    void push(node_type& node);
+    bool push(node_type& node);
 
     void clear();
 
