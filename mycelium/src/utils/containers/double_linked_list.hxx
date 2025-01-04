@@ -45,24 +45,28 @@ public:
         : _datas{_datas}, _prev{this}, _next{this}
         {}
 
-    /** Copy constructor: only copy _datas to preserve structure */
-    double_linked_node(const double_linked_node& list)
-        : double_linked_node(list._datas)
-        {}
+    /** Disable copy construction: hardly definable behaviour */
+    double_linked_node(const double_linked_node& list) = delete;
 
-    /** Copy asignement operator: only copy _datas to preserve structure */
-    double_linked_node& operator=(const double_linked_node& list)
-        {
-            _datas=list._datas;
-            return *this;
-        }
+    /** Disable copy assignement: hardly definable behaviour */
+    double_linked_node& operator=(const double_linked_node& list) = delete;
     
-    /** Move constructor: only move _datas to preserve structure */
+    /** Move constructor: move _datas and preserve structure */
     double_linked_node(double_linked_node&& list)
         : double_linked_node(std::move(list._datas))
-        {}
+        {
+            if (!list.is_empty())
+                {
+                    /** Swaps this node with the new one */
+                    _next = list._next;
+                    _prev = list._prev;
+                    _next->_prev = this;
+                    _prev->_next = this;
+                    list._next = list._prev = &list;
+                }
+        }
     
-    /** Move assignement operator: only moves datas to preserve structure */
+    /** Move assignement operator: moves datas and preserve structure */
     double_linked_node& operator=(double_linked_node&& list)
         {
             _datas=std::move(list._datas);
@@ -276,5 +280,7 @@ public:
 }; /** endof class anchored_list */
 
 } /* endof namespace container */
+
+#include "double_linked_list.hpp"
 
 #endif /* DEF_DOUBLE_LINKED_LIST_HPP */
