@@ -9,3 +9,4 @@ find_slaves/
 rnd/
 .old/
 logs/
+build/unit_tests/

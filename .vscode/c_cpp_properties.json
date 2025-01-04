@@ -4,7 +4,9 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${workspaceFolder}/src/**",
+                // "${workspaceFolder}/src/**",
+                "${workspaceFolder}/mycelium/**",
+                "${workspaceFolder}/mycelium/src/**",
                 "~/Arduino/libraries/**",
                 "~/.arduino15/packages/teensy/hardware/avr/1.59.0/cores/teensy4/**",
                 "~/.arduino15/packages/teensy/hardware/avr/1.59.0/libraries/**"

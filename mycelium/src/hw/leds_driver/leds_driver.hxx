@@ -45,12 +45,19 @@ static constexpr const size_t ANNODE_DRIVER_COUNT = 3;
 struct DriverDefaultSettings
 {
     /**
+     * Target frequency to refresh whole device ouputs in Hz
      * 
-     */
-    static unsigned long RefreshRate; /* Hz */
+     *  Will be multiplied by multiplexer buses count (columns count)
+     *      to obtain the update rate for the driver, @c LedsDriver::update
+     * 
+     *  @note defaults to 50Hz, leading to an update rate of 400Hz
+     * */
+    static unsigned long RefreshRate;
 
     /**
-     * 
+     * Filters out logs below given severity
+     * @note defaults to @c error::severity::DEBUG if macro NDEBUG is undefined
+     *      else defaults to @c error::severity::INFO
      */
     static error::severity LogLevel;
 };

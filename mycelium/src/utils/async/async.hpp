@@ -56,7 +56,7 @@ class Scheduler
 {
 public:
 
-
+    async_state state();
 };
 
 /**

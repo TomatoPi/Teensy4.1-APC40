@@ -11,4 +11,4 @@ LOGSDIR="logs"
 mkdir -p $BUILDIDR/utils/containers/
 mkdir -p $LOGSDIR
 
-g++ -Wall -Werror -Isrc/ $TESTDIR/$dllist.cpp -o $BUILDIDR/$dllist && $BUILDIDR/$dllist > $LOGSDIR/dllist.log
+g++ -Wall -Werror -Imycelium/src/ $TESTDIR/$dllist.cpp -o $BUILDIDR/$dllist && $BUILDIDR/$dllist > $LOGSDIR/dllist.log
