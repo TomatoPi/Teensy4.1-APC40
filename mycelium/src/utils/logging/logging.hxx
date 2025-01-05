@@ -109,52 +109,50 @@ struct Logger
     filter_type     filter;
 };
 
-// template <typename ...Logs>
-// struct LoggersTie;
+template <typename ...Ltps>
+struct LoggersTie
+{
+    using logs_tp = std::tuple<Ltps...>;
 
-// template <typename LHead, typename ...LTail>
-// struct LoggersTie<LHead, LTail...>: public LoggersTie<LHead>, LoggersTie<LTail...>
-// {
-//     using head_t = LoggersTie<LHead>;
-//     using tail_t = LoggersTie<LTail...>;
+    template <typename Header, typename ...Args>
+        error::status_byte
+    operator() (Header msg_header, const char* fmt, Args... args)
+        {
+            auto helper = [&](auto logger) { return logger(msg_header, fmt, args...); };
+            std::apply([helper](auto ...l){std::make_tuple(helper(l)...); }, loggers);
+            return error::status_byte{};
+            // return _call_impl<Header, Args..., std::integral_constant<size_t, 0>>(msg_header, fmt, std::forward<Args>(args)...);
+        }
 
-//     template <typename Header, typename ...Args>
-//         error::status_byte
-//     operator() (Header msg_header, const char* fmt, Args... args)
-//         {
-//             logger(msg_header, fmt, args...);
-//             static_cast<tail_t*>(this)(msg_header, fmt, args...);
-//         }
+    // template <typename Header, typename ...Args, typename Cst>
+    //     error::status_byte
+    // _call_impl(Header msg_header, const char* fmt, Args... args);
 
-//     // template <typename Header, typename ...Args, typename ...Ltps>
-//     //     error::status_byte
-//     // _call_impl(Header msg_header, const char* fmt, Args... args);
+    // template <typename Header>
+    // bool is_logging_enabled_for(const Header& header) const
+    //     { return _is_logging_enabled_for_impl<Header, std::index_sequence_for<Logs...>>(header); }
 
-//     // template <typename Header>
-//     // bool is_logging_enabled_for(const Header& header) const
-//     //     { return _is_logging_enabled_for_impl<Header, std::index_sequence_for<Logs...>>(header); }
-
-//     // template <typename Header, size_t Idx, size_t ...Indexes>
-//     // bool _is_logging_enabled_for_impl(const Header& header) const
-//     //     {
-//     //         if (std::get<Idx>(loggers).is_logging_enabled_for(header))
-//     //             { return true; }
-//     //         else if (0 < sizeof...(Indexes))
-//     //             { return false; }
+    // template <typename Header, size_t Idx, size_t ...Indexes>
+    // bool _is_logging_enabled_for_impl(const Header& header) const
+    //     {
+    //         if (std::get<Idx>(loggers).is_logging_enabled_for(header))
+    //             { return true; }
+    //         else if (0 < sizeof...(Indexes))
+    //             { return false; }
             
-//     //         return _is_logging_enabled_for_impl<Header, Indexes...>(header);
-//     //     }
+    //         return _is_logging_enabled_for_impl<Header, Indexes...>(header);
+    //     }
 
 
-//     // loggers_tp loggers;
+    // loggers_tp loggers;
     
-//     LHead logger;
-// };
+    logs_tp loggers;
+};
 
-// template <typename L, typename ...Logs>
-// LoggersTie<Logs...> tie_logs(L logger, Logs... tps)
-//     { return LogersTie<L, Logs...>}
-//     // { return LoggersTie<Logs...>{ std::tie(std::forward<Logs&>(loggers)...) }; }
+template <typename ...Logs>
+LoggersTie<Logs...> tie_logs(Logs... loggers)
+    // { return LogersTie<L, Logs...>}
+    { return LoggersTie<Logs...>{ std::tie(std::forward<Logs&>(loggers)...) }; }
 
 struct severity_filter
 {

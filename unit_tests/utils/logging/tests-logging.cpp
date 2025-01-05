@@ -62,6 +62,15 @@ int main(int argc, char* const argv[])
 
     auto doublelog = tie_logs(logger, errLogger);
     doublelog(header, "This message only shows once");
+    std::cout << std::endl;
+
+    header.errbyte = errcode::HWERROR | severity::EMERGENCY;
+    doublelog(header, "This message is shown twice\n");
+
+    header.errbyte = errcode::HWERROR | severity::DEBUG;
+    doublelog(header, "This message is not shown");
+    std::cout << "/* discarded twice 'This message is not shown' */" << std::endl;
+    std::cout << std::endl;
 
     return EXIT_SUCCESS;
 }

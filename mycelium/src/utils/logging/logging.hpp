@@ -30,6 +30,23 @@ namespace logging
 //     }
 
 // template <typename ...Logs>
+//     template <typename Header, typename ...Args, typename Cst>
+//     error::status_byte
+// LoggersTie<Logs...>::_call_impl(Header msg_header, const char* fmt, Args... args)
+//     {
+//         std::get<Cst::value>(loggers)(msg_header, fmt, args...);
+//         _call_impl<Header, Args..., Cst::value+1>(msg_header, fmt, args...);
+//     }
+
+// template <typename ...Logs>
+//     template <typename Header, typename ...Args>
+//     error::status_byte
+// LoggersTie<Logs...>::_call_impl<Header, Args..., std::integral_constant<size_t, 2>>(Header msg_header, const char* fmt, Args... args)
+//     { /* recursive closure */ }
+
+
+
+// template <typename ...Logs>
 //     template <typename Header, typename ...Args>
 //     error::status_byte
 // LoggersTie<Logs...>::_call_impl<Header, Args..., sizeof...(Logs)-1>(Header msg_header, const char* fmt, Args... args, std::index_sequence<Idx>)
