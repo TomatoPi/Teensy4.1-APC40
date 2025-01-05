@@ -5,7 +5,10 @@
 #ifndef DEF_ERROR_HXX
 #define DEF_ERROR_HXX
 
-#include <Arduino.h>
+#if defined(ARDUINO_TEENSY41)
+    #include <Arduino.h>
+#endif
+
 #include <cstdint>
 
 namespace error
@@ -34,6 +37,28 @@ enum class errcode: uint8_t
 };
 
 /**
+ * Converts an error code to a static str
+ */
+static constexpr const char* errname(errcode err)
+{
+    switch(err)
+    {
+        case errcode::OK:                 return "OK";
+
+        case errcode::HWERROR:            return "HWERROR";
+        case errcode::TIMEOUT_ERROR:      return "TIMEOUT_ERROR";
+        case errcode::MEMORY_ERROR:       return "MEMORY_ERROR";
+        case errcode::GENERIC_ERROR:      return "GENERIC_ERROR";
+
+        case errcode::INVALID_ARGUMENT:   return "INVALID_ARGUMENT";
+        case errcode::INVALID_CALL:       return "INVALID_CALL";
+        case errcode::INVALID_STATE:      return "INVALID_STATE";
+
+        default:                          return "UNKNOWN";
+    }
+}
+
+/**
  * 
  */
 enum class severity: uint8_t
@@ -57,6 +82,28 @@ enum class severity: uint8_t
 /**
  * 
  */
+static constexpr const char* severity_name(const severity s)
+{
+    switch (s)
+    {
+        case severity::EMERGENCY:   return "EMERG";
+        case severity::ALERT:       return "ALERT";
+        case severity::CRITICAL:    return "CRIT!";
+
+        case severity::ERROR:       return "ERROR";
+        case severity::WARNING:     return "WARN";
+        case severity::NOTICE:      return "NOTE";
+
+        case severity::INFO:        return "INFO";
+        case severity::DEBUG:       return "DEBUG";
+
+        default:                    return "UNKNOWN";
+    }
+}
+
+/**
+ * 
+ */
 struct status_byte
 {
     uint8_t errno :5;
@@ -66,12 +113,13 @@ struct status_byte
         : errno{static_cast<uint8_t>(errno)}, level{static_cast<uint8_t>(level)}
         {}
 
-    explicit constexpr operator errcode() const
+    constexpr operator errcode() const
         { return static_cast<errcode>(errno); }
 
-    explicit constexpr operator severity() const
+    constexpr operator severity() const
         { return static_cast<severity>(level); }
 };
+static_assert(sizeof(status_byte) == sizeof(uint8_t));
 
 /**
  * Syntax sugar to return status_byte from an errcode and an errno
@@ -89,11 +137,18 @@ static constexpr const uint8_t ERROR_PIN = 6;
  */
 extern bool HasError;
 
-inline static void raise_error()
-    { HasError = true; digitalWriteFast(ERROR_PIN, HIGH); }
+#if defined(ARDUINO_TEENSY41)
+    inline static void raise_error()
+        { HasError = true; digitalWriteFast(ERROR_PIN, HIGH); }
 
-inline static void clear_error()
-    { HasError = false; digitalWriteFast(ERROR_PIN, LOW); }
+    inline static void clear_error()
+        { HasError = false; digitalWriteFast(ERROR_PIN, LOW); }
+#else
+    inline static void raise_error()
+        { HasError = true; }
+    inline static void clear_error()
+        { HasError = false; }
+#endif
 
 } /* namespace error */
 
