@@ -8,6 +8,7 @@
 #include "../../error.h"
 #include "../mycelium/mycelium.h"
 
+#include <cstddef>
 #include <utility>
 #include <tuple>
 
@@ -58,6 +59,23 @@ namespace logging
 //     Printer(Printer&&)      = default;
 // };
 
+// struct AbstractPrinter
+// {
+//     virtual error::status_byte operator() (const char* fmt, ...) = 0;
+//     virtual error::status_byte flush() = 0;
+//     virtual explicit operator bool() const = 0;
+// };
+
+// struct AbstractHeader
+// {
+//     virtual error::status_byte operator() (AbstractPrinter&) = 0;
+// };
+
+// struct AbstractFilter
+// {
+//     virtual bool operator() (const AbstractHeader&) = 0;
+// };
+
 template <typename Printer, typename Filter>
 struct Logger
 {
@@ -91,48 +109,52 @@ struct Logger
     filter_type     filter;
 };
 
-template <typename ...Logs>
-struct LoggersTie
-{
-    using loggers_tp = std::tuple<std::add_lvalue_reference_t<Logs>...>;
+// template <typename ...Logs>
+// struct LoggersTie;
 
-    template <typename Header, typename ...Args>
-        error::status_byte
-    operator() (Header msg_header, const char* fmt, Args... args)
-        {
-            _call_impl<Header, Args...>(
-                msg_header, fmt, std::forward<Args>(args)...,
-                std::index_sequence_for<Logs...>{}
-                );
-            return error::status_byte{};
-        }
+// template <typename LHead, typename ...LTail>
+// struct LoggersTie<LHead, LTail...>: public LoggersTie<LHead>, LoggersTie<LTail...>
+// {
+//     using head_t = LoggersTie<LHead>;
+//     using tail_t = LoggersTie<LTail...>;
 
-    template <typename Header, typename ...Args, size_t ...Indexes>
-        error::status_byte
-    _call_impl(Header msg_header, const char* fmt, Args... args, std::index_sequence<Indexes...>);
+//     template <typename Header, typename ...Args>
+//         error::status_byte
+//     operator() (Header msg_header, const char* fmt, Args... args)
+//         {
+//             logger(msg_header, fmt, args...);
+//             static_cast<tail_t*>(this)(msg_header, fmt, args...);
+//         }
 
-    template <typename Header>
-    bool is_logging_enabled_for(const Header& header) const
-        { return _is_logging_enabled_for_impl<Header, std::index_sequence_for<Logs...>>(header); }
+//     // template <typename Header, typename ...Args, typename ...Ltps>
+//     //     error::status_byte
+//     // _call_impl(Header msg_header, const char* fmt, Args... args);
 
-    template <typename Header, size_t Idx, size_t ...Indexes>
-    bool _is_logging_enabled_for_impl(const Header& header) const
-        {
-            if (std::get<Idx>(loggers).is_logging_enabled_for(header))
-                { return true; }
-            else if (0 < sizeof...(Indexes))
-                { return false; }
+//     // template <typename Header>
+//     // bool is_logging_enabled_for(const Header& header) const
+//     //     { return _is_logging_enabled_for_impl<Header, std::index_sequence_for<Logs...>>(header); }
+
+//     // template <typename Header, size_t Idx, size_t ...Indexes>
+//     // bool _is_logging_enabled_for_impl(const Header& header) const
+//     //     {
+//     //         if (std::get<Idx>(loggers).is_logging_enabled_for(header))
+//     //             { return true; }
+//     //         else if (0 < sizeof...(Indexes))
+//     //             { return false; }
             
-            return _is_logging_enabled_for_impl<Header, Indexes...>(header);
-        }
+//     //         return _is_logging_enabled_for_impl<Header, Indexes...>(header);
+//     //     }
 
 
-    loggers_tp loggers;
-};
+//     // loggers_tp loggers;
+    
+//     LHead logger;
+// };
 
-template <typename ...Logs>
-LoggersTie<Logs...> tie_logs(Logs... loggers)
-    { return LoggersTie<Logs...>{ std::tie(std::forward<Logs&>(loggers)...) }; }
+// template <typename L, typename ...Logs>
+// LoggersTie<Logs...> tie_logs(L logger, Logs... tps)
+//     { return LogersTie<L, Logs...>}
+//     // { return LoggersTie<Logs...>{ std::tie(std::forward<Logs&>(loggers)...) }; }
 
 struct severity_filter
 {
