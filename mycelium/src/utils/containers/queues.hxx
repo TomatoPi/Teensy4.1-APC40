@@ -8,6 +8,7 @@
 #include "double_linked_list.hxx"
 
 #include <array>
+#include <cstddef>
 
 namespace containers
 {
@@ -87,12 +88,13 @@ public:
     using base_type::dump;
 };
 
-template <typename ValueT, typename ComparatorT, size_t SIZE>
+template <typename ValueT, typename ComparatorT, size_t SMax>
 class Heap //: public QueueCRT<Heap<ValueT, ComparatorT, SIZE>>
 {
 public:
-    static constexpr const size_t SIZE_MAX = SIZE;
+    static constexpr const size_t MaxSize = SMax;
 
+    using type = Heap<ValueT, ComparatorT, MaxSize>;
     using value_type = ValueT;
     using context = typename mycelium::contextof<type>::type;
 
@@ -182,7 +184,7 @@ private:
     void shift_up(size_t index);
     void shift_down(size_t index);
 
-    std::array<node_type*, SIZE_MAX> _nodes;
+    std::array<node_type*, MaxSize> _nodes;
     size_t _size;
 };
 

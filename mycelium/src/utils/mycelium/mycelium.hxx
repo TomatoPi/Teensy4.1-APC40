@@ -24,19 +24,22 @@ struct contextof
 {
     struct type
     {
-        static void assert_error(error::status_byte errno, const char* msg)
-            { raise_error(errno, msg); __MYCELIUM_ASSERT(false); }
+        static void assert_error(error::status_byte errbyte, const char* msg)
+            { raise_error(errbyte, msg); __MYCELIUM_ASSERT(false); }
 
-        static void raise_error(error::status_byte errno, const char* msg)
-            {  }
+        static error::status_byte raise_error(error::status_byte errbyte, const char* msg)
+            { return errbyte; }
+
+        static bool is_error(error::status_byte errbyte)
+            { return false; }
 
 #ifndef ARDUINO_TEENSY41
-        struct logger
-        {
-            template <typename ...Args>
-            static void error(const char* fmt, Args ...args)
-                { fprintf(s)}
-        };
+        // struct logger
+        // {
+        //     template <typename ...Args>
+        //     static void error(const char* fmt, Args ...args)
+        //         { fprintf(s)}
+        // };
 #else
         struct logger
         {

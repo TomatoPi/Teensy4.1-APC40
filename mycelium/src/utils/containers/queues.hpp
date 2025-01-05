@@ -10,23 +10,26 @@ namespace containers
 {
 
 
-template <typename ValueT, typename ComparatorT, size_t SIZE>
+template <typename ValueT, typename ComparatorT, size_t SMax>
 bool
-Heap<ValueT, ComparatorT, SIZE>::comparator_type::operator() (const node_type* lhs, const node_type* rhs) const
+Heap<ValueT, ComparatorT, SMax>::comparator_type::operator() (const node_type* lhs, const node_type* rhs) const
     {
         return ComparatorT{}(lhs->value(), rhs->value());
     }
 
-template <typename ValueT, typename ComparatorT, size_t SIZE>
-typename Heap<ValueT, ComparatorT, SIZE>::value_type
-Heap<ValueT, ComparatorT, SIZE>::node_type::operator= (value_type val)
+template <typename ValueT, typename ComparatorT, size_t SMax>
+typename Heap<ValueT, ComparatorT, SMax>::value_type
+Heap<ValueT, ComparatorT, SMax>::node_type::operator= (value_type val)
     {
         _datas = val;
         if (is_orphan())
             { return val; /* no heap to preserve */ }
 
         if (_heap->_size <= _index || _heap->_nodes[_index] != this)
-            { return val; context::assert_error(false); /* TODO: raise INVALID_STATE */ }
+        {
+            context::assert_error(error::errcode::INVALID_STATE, "broken heap node");
+            return val;
+        }
 
         /** might looks dirty but in a correct heap, shifts are no-ops */
         _heap->shift_up(_index);
@@ -35,15 +38,18 @@ Heap<ValueT, ComparatorT, SIZE>::node_type::operator= (value_type val)
         return val;
     }
 
-template <typename ValueT, typename ComparatorT, size_t SIZE>
+template <typename ValueT, typename ComparatorT, size_t SMax>
 void
-Heap<ValueT, ComparatorT, SIZE>::node_type::pop_self()
+Heap<ValueT, ComparatorT, SMax>::node_type::pop_self()
     {
         if (nullptr == _heap)
             { return; }
 
         if (_heap->_size <= _index || _heap->_nodes[_index] != this)
-            { return; assert(false); /* TODO: raise INVALID_STATE */ }
+        {
+            context::assert_error(error::errcode::INVALID_STATE, "broken heap node");
+            return;
+        }
 
         size_t last = _heap->_size -1;
         if (last != _index)
@@ -63,27 +69,27 @@ Heap<ValueT, ComparatorT, SIZE>::node_type::pop_self()
         _index = 0;
     }
 
-template <typename ValueT, typename ComparatorT, size_t SIZE>
-Heap<ValueT, ComparatorT, SIZE>::Heap()
+template <typename ValueT, typename ComparatorT, size_t SMax>
+Heap<ValueT, ComparatorT, SMax>::Heap()
     : _nodes{}, _size{0}
     {
         for (auto& ptr: _nodes)
             { ptr = nullptr; }
     }
 
-template <typename ValueT, typename ComparatorT, size_t SIZE>
-Heap<ValueT, ComparatorT, SIZE>::~Heap()
+template <typename ValueT, typename ComparatorT, size_t SMax>
+Heap<ValueT, ComparatorT, SMax>::~Heap()
     {
         clear();
     }
 
-template <typename ValueT, typename ComparatorT, size_t SIZE>
+template <typename ValueT, typename ComparatorT, size_t SMax>
 bool
-Heap<ValueT, ComparatorT, SIZE>::push(node_type& node)
+Heap<ValueT, ComparatorT, SMax>::push(node_type& node)
     {
         if (!node.is_orphan())
             { return false; /* TODO: raise INVALID_ARGUMENT */ }
-        if (SIZE_MAX <= _size)
+        if (MaxSize <= _size)
             { return false; /* TODO: raise MEMORY_ERROR */ }
 
         size_t index=_size;
@@ -96,9 +102,9 @@ Heap<ValueT, ComparatorT, SIZE>::push(node_type& node)
         return true;
     }
 
-template <typename ValueT, typename ComparatorT, size_t SIZE>
+template <typename ValueT, typename ComparatorT, size_t SMax>
 void
-Heap<ValueT, ComparatorT, SIZE>::clear()
+Heap<ValueT, ComparatorT, SMax>::clear()
     {
         for (auto ptr: _nodes)
             {
@@ -111,9 +117,9 @@ Heap<ValueT, ComparatorT, SIZE>::clear()
         _size = 0;
     }
     
-template <typename ValueT, typename ComparatorT, size_t SIZE>
+template <typename ValueT, typename ComparatorT, size_t SMax>
 void
-Heap<ValueT, ComparatorT, SIZE>::shift_up(size_t index)
+Heap<ValueT, ComparatorT, SMax>::shift_up(size_t index)
     {
         if (index == 0)
             { return; /* don't shift up root */}
@@ -130,9 +136,9 @@ Heap<ValueT, ComparatorT, SIZE>::shift_up(size_t index)
             }
     }
 
-template <typename ValueT, typename ComparatorT, size_t SIZE>
+template <typename ValueT, typename ComparatorT, size_t SMax>
 void
-Heap<ValueT, ComparatorT, SIZE>::shift_down(size_t index)
+Heap<ValueT, ComparatorT, SMax>::shift_down(size_t index)
     {
         if (_size <= (index+1))
             { return; /* don't shift down last object */ }
@@ -163,11 +169,11 @@ Heap<ValueT, ComparatorT, SIZE>::shift_down(size_t index)
         }
     }
 
-template <typename ValueT, typename ComparatorT, size_t SIZE>
+template <typename ValueT, typename ComparatorT, size_t SMax>
 bool
-Heap<ValueT, ComparatorT, SIZE>::check() const
+Heap<ValueT, ComparatorT, SMax>::check() const
     {
-        if (SIZE_MAX < _size)
+        if (MaxSize < _size)
             { return false; }
         
         for (size_t i=0; i<_size; ++i)
@@ -183,10 +189,10 @@ Heap<ValueT, ComparatorT, SIZE>::check() const
         return std::is_heap(std::begin(_nodes), std::begin(_nodes) + _size, comparator_type{});
     }
 
-template <typename ValueT, typename ComparatorT, size_t SIZE>
+template <typename ValueT, typename ComparatorT, size_t SMax>
     template <typename OutFn>
 void
-Heap<ValueT, ComparatorT, SIZE>::dump(OutFn ofn) const
+Heap<ValueT, ComparatorT, SMax>::dump(OutFn ofn) const
     {
         ofn("\nStack: size=%lu datas=[", _size);
         for (const auto& ptr: _nodes)
