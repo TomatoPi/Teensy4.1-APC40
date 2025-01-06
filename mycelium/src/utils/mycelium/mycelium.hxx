@@ -11,6 +11,7 @@
 #ifndef ARDUINO_TEENSY41
     #include <cassert>
     #include <iostream>
+    #include <chrono>
     #define __MYCELIUM_ASSERT(...) assert(__VA_ARGS__)
 #else 
     #define __MYCELIUM_ASSERT(...) error::raise_error()
@@ -34,12 +35,19 @@ struct contextof
             { return false; }
 
 #ifndef ARDUINO_TEENSY41
-        // struct logger
-        // {
-        //     template <typename ...Args>
-        //     static void error(const char* fmt, Args ...args)
-        //         { fprintf(s)}
-        // };
+        struct time
+        {
+            using clock = std::chrono::system_clock;
+
+            struct time_point
+            {
+                time_point(std::time_t point=clock::now())
+                    : point{point}
+                    {}
+
+                std::time_t point;
+            };
+        };
 #else
         struct logger
         {
@@ -48,6 +56,8 @@ struct contextof
 #endif
     };
 };
+
+struct DummyContext {};
 
 class AbstractContext
 {

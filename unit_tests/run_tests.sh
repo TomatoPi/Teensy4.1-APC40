@@ -22,6 +22,13 @@ LOGFILE="$LOGSDIR/dllist.log"
 echo "Testing $dllist"
 date > $LOGFILE
 g++ -g -Wall -Werror -Imycelium/src/ $TESTDIR/$dllist.cpp -o $BUILDIDR/$dllist >> $LOGFILE && $BUILDIDR/$dllist >> $LOGFILE
+
+if [ $? -eq 0 ]; then
+    echo " ... passed"
+else
+    echo " ... failed"
+fi
+
 date >> $LOGFILE
 
 
@@ -30,12 +37,26 @@ LOGFILE="$LOGSDIR/queues.log"
 echo "Testing $queues"
 date > $LOGFILE
 g++ -g -Wall -Werror -Imycelium/src/ $TESTDIR/$queues.cpp -o $BUILDIDR/$queues >> $LOGFILE && $BUILDIDR/$queues >> $LOGFILE
+
+if [ $? -eq 0 ]; then
+    echo " ... passed"
+else
+    echo " ... failed"
+fi
+
 date >> $LOGFILE
 
 
 LOGFILE="$LOGSDIR/logging.log"
 
 echo "Testing $logging"
-date > $LOGFILE
-g++ -g -Wall -Werror -Imycelium/src/ $TESTDIR/$logging.cpp -o $BUILDIDR/$logging >> $LOGFILE && $BUILDIDR/$logging >> $LOGFILE
-date >> $LOGFILE
+echo "" > $LOGFILE
+g++ -pg -g -Wall -Werror -Imycelium/src/ $TESTDIR/$logging.cpp -o $BUILDIDR/$logging && $BUILDIDR/$logging >> $LOGFILE
+
+diff $LOGFILE $LOGFILE.expected
+
+if [ $? -eq 0 ]; then
+    echo " ... passed"
+else
+    echo " ... failed: missmatch between expected output and result output"
+fi

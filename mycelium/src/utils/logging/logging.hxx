@@ -1,4 +1,5 @@
 /**
+ * Results in 1090 lines of asm when compiled with -O2
  * 
  */
 
@@ -11,6 +12,8 @@
 #include <cstddef>
 #include <utility>
 #include <tuple>
+
+#include <cstdarg>
 
 namespace logging
 {
@@ -59,22 +62,90 @@ namespace logging
 //     Printer(Printer&&)      = default;
 // };
 
-// struct AbstractPrinter
-// {
-//     virtual error::status_byte operator() (const char* fmt, ...) = 0;
-//     virtual error::status_byte flush() = 0;
-//     virtual explicit operator bool() const = 0;
-// };
+template <typename C> struct AbstractOutput;
+template <typename C> struct AbstractHeader;
+template <typename C> struct AbstractFilter;
 
-// struct AbstractHeader
-// {
-//     virtual error::status_byte operator() (AbstractPrinter&) = 0;
-// };
+struct DefaultContext;
 
-// struct AbstractFilter
-// {
-//     virtual bool operator() (const AbstractHeader&) = 0;
-// };
+template <typename Context=DefaultContext>
+struct AbstractOutput
+{
+    using raw_context = Context;
+    using context = typename mycelium::contextof<raw_context>::type;
+
+    /**
+     * Output method using printf style,
+     * @param fmt: printf like formatted string
+     * @param args: arguments corresponding to @c fmt placeholders
+     * @note uses compiler attribute @c __attribute__(format) to check passed arguments
+     *      
+     */
+    error::status_byte operator() (const char* fmt, ...);
+    
+    /**
+     * Ensures that any previous print calls are physically transmitted
+     *  to the corresponding media:
+     *  - all serial bytes are sent,
+     *  - write on SD card complete,
+     *  - ...
+     */
+    virtual error::status_byte flush()      = 0;
+
+    /**
+     * checks stream's availability, should returns false if writing
+     *  to the stream will fail for sure
+     */
+    virtual explicit operator bool() const  = 0;
+
+protected:
+    AbstractOutput()                        = default;
+    AbstractOutput(const AbstractOutput&)   = default;
+    AbstractOutput(AbstractOutput&&)        = default;
+
+    /**
+     * Implementation of output method, called by @c operator(fmt,...)
+     * @note arguments listed in 'args' are checked by the compiler
+     *      and can be presumed correct regarding of 'fmt'
+     */
+    virtual error::status_byte print_impl(const char* fmt, va_list args) = 0;
+};
+
+template <typename Context=DefaultContext>
+struct AbstractHeader
+{
+    using raw_context = Context;
+    using context = typename mycelium::contextof<raw_context>::type;
+    using output_type = typename context::output_type;
+    using filter_type = typename context::filter_type;
+
+    /**
+     * Dumps the header in given output stream,
+     *  @returns stream's status byte
+     */
+    virtual error::status_byte operator() (output_type&)    = 0;
+
+    /**
+     * Returns true if output is enabled given this header and given filter
+     *  Simulates double dispatch using visitor pattern,
+     *  allowing a header to bypass filtering rules
+     */
+    virtual bool operator() (const filter_type& filter)     = 0;
+};
+
+template <typename Context=DefaultContext>
+struct AbstractFilter
+{
+    using raw_context = Context;
+    using context = typename mycelium::contextof<raw_context>::type;
+    using header_type = typename context::header_type;
+
+    /**
+     * Returns true if output is enabled for given header,
+     *  should be overriden and overloaded to dispatch on header's true type
+     */
+    virtual bool operator() (const header_type&) = 0;
+};
 
 template <typename Printer, typename Filter>
 struct Logger
@@ -102,7 +173,7 @@ struct Logger
      *  useful to avoid costly function calls if logging is disabled
      */
     template <typename Header>
-    bool is_logging_enabled_for(const Header& header) const
+    constexpr bool is_logging_enabled_for(const Header& header) const
         { return filter(header); }
 
     printer_type    printer;
@@ -121,37 +192,24 @@ struct LoggersTie
             auto helper = [&](auto logger) { return logger(msg_header, fmt, args...); };
             std::apply([helper](auto ...l){std::make_tuple(helper(l)...); }, loggers);
             return error::status_byte{};
-            // return _call_impl<Header, Args..., std::integral_constant<size_t, 0>>(msg_header, fmt, std::forward<Args>(args)...);
         }
 
-    // template <typename Header, typename ...Args, typename Cst>
-    //     error::status_byte
-    // _call_impl(Header msg_header, const char* fmt, Args... args);
+    template <typename Header>
+    constexpr bool is_logging_enabled_for(const Header& header) const
+        {
+            bool result = false;
+            auto helper = [&result, &header](auto logger) {
+                return result |= logger.is_logging_enabled_for(header);
+                };
+            std::apply([helper](auto ...l){std::make_tuple(helper(l)...); }, loggers);
+            return result;
+        }
 
-    // template <typename Header>
-    // bool is_logging_enabled_for(const Header& header) const
-    //     { return _is_logging_enabled_for_impl<Header, std::index_sequence_for<Logs...>>(header); }
-
-    // template <typename Header, size_t Idx, size_t ...Indexes>
-    // bool _is_logging_enabled_for_impl(const Header& header) const
-    //     {
-    //         if (std::get<Idx>(loggers).is_logging_enabled_for(header))
-    //             { return true; }
-    //         else if (0 < sizeof...(Indexes))
-    //             { return false; }
-            
-    //         return _is_logging_enabled_for_impl<Header, Indexes...>(header);
-    //     }
-
-
-    // loggers_tp loggers;
-    
     logs_tp loggers;
 };
 
 template <typename ...Logs>
 LoggersTie<Logs...> tie_logs(Logs... loggers)
-    // { return LogersTie<L, Logs...>}
     { return LoggersTie<Logs...>{ std::tie(std::forward<Logs&>(loggers)...) }; }
 
 struct severity_filter
@@ -163,13 +221,21 @@ struct severity_filter
     error::severity log_level;
 };
 
+template <typename Filter>
+struct filter_not: Filter
+{
+    template <typename Header>
+    constexpr bool operator() (const Header& h) const
+        { return ! static_cast<const Filter&>(*this)(h); }
+};
+
 struct raw_header
 {
     template <typename PrintFn>
     error::status_byte operator() (PrintFn print) const
         { return print("%lu:%-5s: @%5s: %s: ", timestamp, error::severity_name(errbyte), facility, error::errname(errbyte)); }
 
-    explicit operator error::severity() const
+    constexpr explicit operator error::severity() const
         { return errbyte; }
 
     const char* facility;

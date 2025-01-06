@@ -6,6 +6,9 @@ find_slaves/
 *.fls
 *.log
 
+*.out
+*.rem
+
 rnd/
 .old/
 logs/
