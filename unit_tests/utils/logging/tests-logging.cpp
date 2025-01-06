@@ -1,7 +1,7 @@
 
 #include "utils/logging/logging.h"
-#include "utils/logging/headers.hxx"
-#include "utils/logging/abc.hxx"
+// #include "utils/logging/headers.hxx"
+// #include "utils/logging/abc.hxx"
 
 #include <array>
 #include <cstddef>
@@ -32,37 +32,41 @@ struct mprintf
 
 using mlogger = Logger<mprintf, severity_filter>;
 
-struct vmprintf: logging2::AbstractTransport<>
-{
-    int transmit_impl(const char* fmt, va_list args) override
-        {
-            vprintf(fmt, args);
-            return 0; // status_byte{};
-        }
-    int flush() override
-        {
-            std::flush(std::cout);
-            return 0; // status_byte{};
-        }
-    explicit operator bool() const override
-        { return true; }
-};
+// struct vmprintf: logging2::AbstractTransport<>
+// {
+//     int transmit_impl(const char* fmt, va_list args) override
+//         {
+//             vprintf(fmt, args);
+//             return 0; // status_byte{};
+//         }
+//     int flush() override
+//         {
+//             std::flush(std::cout);
+//             return 0; // status_byte{};
+//         }
+//     explicit operator bool() const override
+//         { return true; }
+// };
 
-template <>
-struct logging2::typeof_timepoint<logging2::DefaultContext>
-{
-    struct type
-    {
-        using time_point = std::time_t;
+// template <>
+// struct logging2::typeof_timepoint<logging2::DefaultContext>
+// {
+//     struct type
+//     {
+//         using time_point = std::time_t;
 
-        static time_point now()
-            { return std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()); }
+//         static time_point now()
+//             { return std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()); }
         
-        template <typename T>
-        static auto hours(T&& t)
-            { return std::chrono::hours(std::forward<T>(t)).count(); }
-    };
-};
+//         template <typename T>
+//         static auto hours(T&& t)
+//             { return std::chrono::hours(std::forward<T>(t)).count(); }
+
+//         template <typename T>
+//         static auto day(T&& t)
+//             { return std::chrono::day()}
+//     };
+// };
 
 int main(int argc, char* const argv[])
 {
@@ -113,14 +117,14 @@ int main(int argc, char* const argv[])
     std::cout << std::endl;
     }
 
-    vmprintf vprinter;
-    vprinter("Hello VLogging ! argc%%d=%d\n", argc);
-    vprinter("Hello VLogging ! argc%%u=%u\n", argc);
-    /* vprinter("Hello VLogging ! argc%%s=%s\n", argc); // won't compile ! %s incompatible with int */
-    vprinter.flush();
+    // vmprintf vprinter;
+    // vprinter("Hello VLogging ! argc%%d=%d\n", argc);
+    // vprinter("Hello VLogging ! argc%%u=%u\n", argc);
+    // /* vprinter("Hello VLogging ! argc%%s=%s\n", argc); // won't compile ! %s incompatible with int */
+    // vprinter.flush();
 
-    logging2::messages::timestamp<> t;
-    t.dump(vprinter);
+    // logging2::messages::timestamp<> t;
+    // t.dump(vprinter);
 
     return EXIT_SUCCESS;
 }

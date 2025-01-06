@@ -28,18 +28,22 @@
             },
             "group": {
                 "kind": "build",
-                "isDefault": true
+                "isDefault": false
             }
         },
         {
             "label": "Compile Sketch",
             "type": "shell",
-            "command": "arduino-cli compile --warnings all --verify -e --build-path ~/build.Arduino/Teensy4.1-APC40.build Teensy4.1-APC40 --verbose",
+            // "command": "arduino-cli compile --warnings all --verify -e --build-path ~/build.Arduino/Teensy4.1-APC40.build Teensy4.1-APC40 --verbose",
+            "command": "bash build.sh",
             "problemMatcher": [],
             "options": {
-                "cwd": "/home/tomato/Arduino"
+                "cwd": "/home/tomato/Arduino/Teensy4.1-APC40"
             },
-            "group": "build"
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
         },
         {
             "label": "Upload Sketch",

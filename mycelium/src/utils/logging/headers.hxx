@@ -21,7 +21,7 @@ struct timestamp: public AbstractMessage<Ctx>
 
     typename base_t::status_type
     dump(typename base_t::transport_type& transport) const override
-        { return transport("%ld", time::hours(tps)); }
+        { return transport("%ld-", time::hours(tps)); }
     
     bool is_accepted_by(const typename base_t::filter_type& filter) const override
         { return filter.is_transmission_allowed_for(*this); }
