@@ -81,7 +81,8 @@ struct AbstractOutput
      * @note uses compiler attribute @c __attribute__(format) to check passed arguments
      *      
      */
-    error::status_byte operator() (const char* fmt, ...);
+    error::status_byte operator() (const char* fmt, ...)
+        __attribute__(( format(printf, 2, 3) ));
     
     /**
      * Ensures that any previous print calls are physically transmitted
