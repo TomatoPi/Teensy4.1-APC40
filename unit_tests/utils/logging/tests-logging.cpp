@@ -1,6 +1,7 @@
 
 #include "utils/logging/logging.h"
 #include "utils/logging/headers.hxx"
+#include "utils/logging/abc.hxx"
 
 #include <array>
 #include <cstddef>
@@ -31,20 +32,36 @@ struct mprintf
 
 using mlogger = Logger<mprintf, severity_filter>;
 
-struct vmprintf: AbstractOutput<>
+struct vmprintf: logging2::AbstractTransport<>
 {
-    status_byte print_impl(const char* fmt, va_list args) override
+    int transmit_impl(const char* fmt, va_list args) override
         {
             vprintf(fmt, args);
-            return status_byte{};
+            return 0; // status_byte{};
         }
-    status_byte flush() override
+    int flush() override
         {
             std::flush(std::cout);
-            return status_byte{};
+            return 0; // status_byte{};
         }
     explicit operator bool() const override
         { return true; }
+};
+
+template <>
+struct logging2::typeof_timepoint<logging2::DefaultContext>
+{
+    struct type
+    {
+        using time_point = std::time_t;
+
+        static time_point now()
+            { return std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()); }
+        
+        template <typename T>
+        static auto hours(T&& t)
+            { return std::chrono::hours(std::forward<T>(t)).count(); }
+    };
 };
 
 int main(int argc, char* const argv[])
@@ -102,8 +119,8 @@ int main(int argc, char* const argv[])
     /* vprinter("Hello VLogging ! argc%%s=%s\n", argc); // won't compile ! %s incompatible with int */
     vprinter.flush();
 
-    // headers::timestamp t;
-    // t(vprinter);
+    logging2::messages::timestamp<> t;
+    t.dump(vprinter);
 
     return EXIT_SUCCESS;
 }

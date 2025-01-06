@@ -5,29 +5,28 @@
 #ifndef DEF_LOGGING_HEADERS_HXX
 #define DEF_LOGGING_HEADERS_HXX
 
-#include "logging.hxx"
+#include "abc.hxx"
 
-namespace logging
+namespace logging2
 {
-namespace headers
+namespace messages
 {
 
-template <typename Context=DefaultContext>
-struct timestamp: AbstractHeader<Context>
+template <typename Ctx=DefaultContext>
+struct timestamp: public AbstractMessage<Ctx>
 {
-    using context_type = Context;
-    using output_type = typename context_type::output_type;
-    using filter_type = typename context_type::filter_type;
+    using context = Ctx;
+    using base_t = AbstractMessage<Ctx>;
+    using time = typeof_timepoint_t<context>;
 
-    using time_point = typename context_type::time::time_point;
-
-    error::status_byte operator() (output_type& out) override
-        { return out(""); }
+    typename base_t::status_type
+    dump(typename base_t::transport_type& transport) const override
+        { return transport("%ld", time::hours(tps)); }
     
-    bool operator() (filter_type& filter) const override
-        { return filter(*this); }
+    bool is_accepted_by(const typename base_t::filter_type& filter) const override
+        { return filter.is_transmission_allowed_for(*this); }
     
-    time_point time;
+    typename time::time_point tps;
 };
 
 // template <typename Context=DefaultContext>
