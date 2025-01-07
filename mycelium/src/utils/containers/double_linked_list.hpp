@@ -1,124 +1,115 @@
 /**
- * 
+ * Utility library for Double linked lists with external memory management
  */
 
-#include "double_linked_list.hxx"
+#ifndef DEF_DOUBLE_LINKED_LIST_HXX
+#define DEF_DOUBLE_LINKED_LIST_HXX
+
+#include <utility>
 
 namespace containers
 {
 
-//     /** Move constructor: move _datas and preserve structure */
-// template <typename ValueT>
-// double_linked_node<ValueT>::double_linked_node(double_linked_node&& list)
-//     : double_linked_node(std::move(list._datas))
-//     {
-//         if (!list.is_empty())
-//             {
-//                 /** Swaps this node with the new one */
-//                 _next = list._next;
-//                 _prev = list._prev;
-//                 _next->_prev = this;
-//                 _prev->_next = this;
-//                 list._next = list._prev = &list;
-//             }
-//     }
+template <typename ValueT>
+class anchored_list;
+
+/**
+ * Queue
+ * Helper class to store list of requested writes
+ *  memory is externaly managed, also caller is allowed to cancel a write at any time
+ *  double linked list with anchor point represented with null writer
+ * 
+ * @param ValueT:   stored data type on each link node
+ * @param ContextT: helper type storing error handling and logging facilities
+ */
+template <typename ValueT>
+class double_linked_node
+{
+public:
+    using value_type = ValueT;
+    using type = double_linked_node<value_type>;
+
+    friend class anchored_list<ValueT>;
+
+private:
+    /** Pointer to stored object, may be null */
+    value_type* _datas;
+
+    /** internal members */
+    double_linked_node* _prev;
+    double_linked_node* _next;
+
+public:
+    /** default contructor */
+    explicit double_linked_node(value_type* _datas=nullptr)
+        : _datas{_datas}, _prev{this}, _next{this}
+        {}
+
+    /** Disable Copy construction: hardly definable behaviour */
+    double_linked_node(const double_linked_node& list)              = delete;
+
+    /** Disable Copy assignement operator: hardly definable behaviour */
+    double_linked_node& operator=(const double_linked_node& list)   = delete;
+    
+    /** Disable Move constructor */
+    double_linked_node(double_linked_node&& list)                   = delete;
+    
+    /** Disable Move assignement operator: hardly definable behaviour on non empty destination */
+    double_linked_node& operator=(double_linked_node&& list)        = delete;
 
     /** Destructor: remove node from any linked list to prevent weird behavior */
-template <typename ValueT>
-double_linked_node<ValueT>::~double_linked_node()
-    { pop_self(); }
+    ~double_linked_node();
     
-    /** Pseudo constructor, recreates the node in-place */
-template <typename ValueT>
-void double_linked_node<ValueT>::init(value_type* val)
-    {
-        pop_self();
-        _datas = val;
-    }
+    /** Pseudo constructor, recreates a fresh node in-place */
+    void init(value_type* val);
 
-/** Assignement opertor to override holded value */
-template <typename ValueT>
-typename double_linked_node<ValueT>::value_type* 
-double_linked_node<ValueT>::operator= (value_type* val)
-    { _datas = val; return val; }
+    /** Assignement opertor to override holded value */
+    value_type* operator= (value_type* val);
 
     /**
      * Dereference operator, access stored datas
      * @warning returns nullptr on anchor nodes
      */
-template <typename ValueT>
-typename double_linked_node<ValueT>::value_type*
-double_linked_node<ValueT>::value()
-    { return _datas; }
-    
-template <typename ValueT>
-const typename double_linked_node<ValueT>::value_type*
-double_linked_node<ValueT>::value() const
-    { return _datas; }
+    value_type* value();
+    const value_type* value() const;
 
     /**
      * Returns true if node doesn't holds datas
      */            
-template <typename ValueT>
-bool double_linked_node<ValueT>::is_anchor() const
-    { return _datas == nullptr; }
+    bool is_anchor() const;
 
     /**
      * Caller is responsible to not call this on an orphan node
      * @warning a node with datas but not in a list appears as empty
      */
-template <typename ValueT>
-bool double_linked_node<ValueT>::is_empty() const
-    { return _next == this; }
+    bool is_empty() const;
 
     /**
      * Returns true if the node does not resides in a list
      * @note orphan nodes behaves as anchors when pushing new nodes into
      */
-template <typename ValueT>
-bool double_linked_node<ValueT>::is_orphan() const
-    { return is_empty() && !is_anchor(); }
+    bool is_orphan() const;
 
     /**
      * Returns @c _next ptr
      * @warning an orphan node IS NOT the front, as it's not a list
      */
-template <typename ValueT>
-double_linked_node<ValueT>*
-double_linked_node<ValueT>::front()
-    { return is_empty() ? nullptr : _next; }
-        
-template <typename ValueT>
-const double_linked_node<ValueT>*
-double_linked_node<ValueT>::front() const
-    { return is_empty() ? nullptr : _next; }
+    double_linked_node* front();
+    const double_linked_node* front() const;
 
     /**
      * Returns @c _prev ptr
      * @warning an orphan node IS NOT the back, as it's not a list
      */
-template <typename ValueT>
-double_linked_node<ValueT>*
-double_linked_node<ValueT>::back()
-    { return is_empty() ? nullptr : _prev; }
-
-template <typename ValueT>
-const double_linked_node<ValueT>*
-double_linked_node<ValueT>::back() const
-    { return is_empty() ? nullptr : _prev; }
-
+    double_linked_node* back();
+    const double_linked_node* back() const;
+    
     /**
      * Removes the node from it's list,
      * @note this method can be called by the owner, to cancel a write before it happens
      * @note calling this method on an anchor clears the list
      */
-template <typename ValueT>
-void double_linked_node<ValueT>::pop_self()
-    {
-        _prev->_next = _next;
-        _next->_prev = _prev;
-        _next = _prev = this;
-    }
+    void pop_self();
 
     /**
      * Merges to queues together by transfering nodes chain,
@@ -126,119 +117,73 @@ void double_linked_node<ValueT>::pop_self()
      *  else anchor is supposed to be the oldest of a un-anchored list
      *      (which may only contains a single element)
      */
-template <typename ValueT>
-void double_linked_node<ValueT>::push_back(double_linked_node& node)
-    {
-        auto ptr = &node;
-        if (ptr->is_anchor())
-        {
-            if (ptr->is_empty())
-                { return; /* avoid adding an other anchor */ }
+    void push_back(double_linked_node& node);
 
-            /* preserve structure */
-            ptr->_next->_prev = _prev;
-            ptr->_prev->_next = this;
-            /* new head comes after current list */
-            _prev->_next = ptr->_next;
-            /* new tail comes at last */
-            _prev = ptr->_prev;
-            /* preserve empty list structure */
-            ptr->_next = ptr->_prev = ptr;
-        }
-        else
-        {
-            double_linked_node* current_last = _prev;
-            /* new head (ptr) comes after current list */
-            _prev->_next = ptr;
-            /* new tail (ptr->_prev) becames the latest */
-            ptr->_prev->_next = this;
-            _prev = ptr->_prev;
-            /* keep structure correctness */
-            ptr->_prev = current_last;
-        }
-    }
+    void push_front(double_linked_node& node)
+        { _next->push_back(node); }
 
     /**
-     * Exchange two nodes within their respective lists
+     * Exchange two nodes within their respective lists,
      * @note if both nodes are empty (not in a list), this is a no-op
      */
-template <typename ValueT>
-void swap(double_linked_node<ValueT>& lhs, double_linked_node<ValueT>& rhs)
-    {
-        if (lhs.is_empty() && rhs.is_empty())
-            { return; }
-
-        auto replace = [](auto& empty, auto& non_empty) -> void
-            {
-                empty._next = non_empty._next;
-                empty._prev = non_empty._prev;
-                non_empty._next->_prev = non_empty._prev->_next = &empty;
-                non_empty._next = non_empty._prev = &non_empty;
-            };
-
-        if (lhs.is_empty())
-        {
-            replace(lhs, rhs);
-        }
-        else if (rhs.is_empty())
-        {
-            replace(rhs, lhs);
-        }
-        else
-        {
-            lhs._prev->_next = &rhs;
-            rhs._prev->_next = &lhs;
-
-            lhs._next->_prev = &rhs;
-            rhs._next->_prev = &lhs;
-
-            auto tmp = lhs._prev;
-            lhs._prev = rhs._prev;
-            rhs._prev = tmp;
-
-            tmp = lhs._next;
-            lhs._next = rhs._next;
-            rhs._next = tmp;
-        }
-    }
+    template <typename T>
+    friend void swap(double_linked_node<T>& lhs, double_linked_node<T>& rhs);
 
     /**
      * 
      */
-template <typename ValueT>
     template <typename OutputFn>
-void double_linked_node<ValueT>::dump(OutputFn output_fn) const
-    {
-        if (is_anchor())
-            { output_fn("\nAnchor:"); }
+    void dump(OutputFn output_fn) const;
 
-        output_fn("\n\tnode=%-10p next=%-10p prev=%-10p _datas={",
-            this, _next, _prev);
-        if (_datas)
-            { _datas->dump(output_fn); }
-        output_fn("}");
-
-        if (is_anchor())
-            {
-                output_fn("\nNodes:");
-                for (double_linked_node* ptr=_next; ptr!=this; ptr=ptr->_next)
-                    { ptr->dump(output_fn); }
-                output_fn("\nEnd ===");
-            }
-    }
+}; /* endof struct double_linked_node */
 
 template <typename ValueT>
-void anchored_list<ValueT>::deep_clear()
-    {
-        node_type* ptr = _anchor._next;
-        do
-        {
-            node_type* next_ptr = ptr->_next;
-            ptr->_next = ptr->_prev = ptr;
-            ptr = next_ptr;
+class anchored_list
+{
+public:
+    using value_type = ValueT;
+    using type = anchored_list<value_type>;
+    using node_type = typename double_linked_node<value_type>::type;
 
-        } while (ptr != &_anchor);
-        _anchor.init(nullptr);
-    }
+private:
+    node_type _anchor;
 
-} /* endof namespace containers */
+public:
+    bool is_empty() const           { return _anchor.is_empty(); }
+
+    /**
+     * Remove the anchor from the list, which leaves all existing nodes linked together
+     *  Usefull if leaving out an orphaned list is not critical
+     * */
+    void fast_clear()               { _anchor.pop_self(); }
+
+    /**
+     * Clears the list and leave every node as singular orphaned nodes
+     *  usefull if @c fast_clear() is not usable
+     */
+    void deep_clear();
+
+    node_type* front()              { return _anchor.front(); }
+    const node_type* front() const  { return _anchor.front(); }
+
+    node_type* back()               { return _anchor.back(); }
+    const node_type* back() const   { return _anchor.back(); }
+
+    void push_back(type& lst)       { return _anchor.push_back(lst._anchor); }
+    void push_front(type& lst)      { return _anchor.push_front(lst._anchor); }
+
+    void push_back(node_type& node) { return _anchor.push_back(node); }
+    void push_front(node_type& node){ return _anchor.push_front(node); }
+
+    template <typename OutputFn>
+    void dump(OutputFn outfn) const { return _anchor.dump(outfn); }
+
+    const node_type* anchor() const { return &_anchor; }
+
+}; /** endof class anchored_list */
+
+} /* endof namespace container */
+
+#include "_double_linked_list.hpp"
+
+#endif /* DEF_DOUBLE_LINKED_LIST_HXX */

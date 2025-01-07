@@ -1,5 +1,5 @@
 
-#include "utils/containers/double_linked_list.h"
+#include "double_linked_list.hpp"
 
 #include <array>
 #include <cstddef>
@@ -8,6 +8,13 @@
 
 using namespace containers;
 
+void context::assert_error(error::errcode code, const char* msg)
+{
+    std::cerr << "ASSERT ERROR: " << error::errname(code) << " "
+        << msg << std::endl;
+    assert(false);
+}
+
 struct value_type
 {
     int val;
@@ -15,19 +22,6 @@ struct value_type
     void dump(OutputFn outfn) const
         { outfn("%d", val); }
 };
-
-struct context_type
-{
-    template <typename ...Args>
-    static void trace(Args... args)
-        { }
-
-    template <typename ...Args>
-    static void assert_error(Args... args)
-        { }
-};
-
-
 
 using node_t = double_linked_node<value_type>;
 using list_t = anchored_list<value_type>;

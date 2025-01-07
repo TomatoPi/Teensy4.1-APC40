@@ -21,7 +21,7 @@ enum class errcode: uint8_t
 {
     OK = 0,                     ///< Success
     /** 
-     * Internal errors, that may occur at runtime
+     * Internal errors, may occur at runtime
      */
     HWERROR         = 0x01,     ///< More infos may be available at module specific error pointer
     GENERIC_ERROR   = 0x02,     ///< Random error without any clear cause
@@ -34,29 +34,13 @@ enum class errcode: uint8_t
     INVALID_STATE       = 0x10, ///< algorithm error
     INVALID_CALL        = 0x11, ///< called a method that should not be called at this time
     INVALID_ARGUMENT    = 0x12, ///< called a method with out of domain argument, see error message
+    INFINITE_LOOP       = 0x13, ///< runned an unbounded iteration over the predefined limit
 };
 
 /**
  * Converts an error code to a static str
  */
-static constexpr const char* errname(errcode err)
-{
-    switch(err)
-    {
-        case errcode::OK:                 return "OK";
-
-        case errcode::HWERROR:            return "HWERROR";
-        case errcode::TIMEOUT_ERROR:      return "TIMEOUT_ERROR";
-        case errcode::MEMORY_ERROR:       return "MEMORY_ERROR";
-        case errcode::GENERIC_ERROR:      return "GENERIC_ERROR";
-
-        case errcode::INVALID_ARGUMENT:   return "INVALID_ARGUMENT";
-        case errcode::INVALID_CALL:       return "INVALID_CALL";
-        case errcode::INVALID_STATE:      return "INVALID_STATE";
-
-        default:                          return "UNKNOWN";
-    }
-}
+static constexpr const char* errname(errcode err);
 
 /**
  * 
@@ -82,50 +66,36 @@ enum class severity: uint8_t
 /**
  * 
  */
-static constexpr const char* severity_name(const severity s)
-{
-    switch (s)
-    {
-        case severity::EMERGENCY:   return "EMERG";
-        case severity::ALERT:       return "ALERT";
-        case severity::CRITICAL:    return "CRIT!";
-
-        case severity::ERROR:       return "ERROR";
-        case severity::WARNING:     return "WARN";
-        case severity::NOTICE:      return "NOTE";
-
-        case severity::INFO:        return "INFO";
-        case severity::DEBUG:       return "DEBUG";
-
-        default:                    return "UNKNOWN";
-    }
-}
+static constexpr const char* severity_name(const severity s);
 
 /**
  * 
  */
 struct status_byte
 {
-    uint8_t errno :5;
+    uint8_t code :5;
     uint8_t level :3;
 
-    constexpr status_byte(const errcode errno=errcode::OK, const severity level=severity::INFO)
-        : errno{static_cast<uint8_t>(errno)}, level{static_cast<uint8_t>(level)}
+    constexpr status_byte(const errcode code=errcode::OK, const severity level=severity::INFO)
+        : code{static_cast<uint8_t>(code)}, level{static_cast<uint8_t>(level)}
         {}
 
     constexpr operator errcode() const
-        { return static_cast<errcode>(errno); }
+        { return static_cast<errcode>(code); }
 
     constexpr operator severity() const
         { return static_cast<severity>(level); }
+
+    constexpr operator bool() const
+        { return static_cast<errcode>(code) == errcode::OK; }
 };
 static_assert(sizeof(status_byte) == sizeof(uint8_t));
 
 /**
- * Syntax sugar to return status_byte from an errcode and an errno
+ * Syntax sugar to return status_byte from an errcode and an code
  */
-constexpr status_byte operator| (errcode errno, severity sv)
-    { return {errno, sv}; }
+constexpr status_byte operator| (errcode code, severity sv)
+    { return {code, sv}; }
 
 /**
  * Pin with a led attached to signal presence of errors to the user
@@ -151,5 +121,7 @@ extern bool HasError;
 #endif
 
 } /* namespace error */
+
+#include "_error.hpp"
 
 #endif /* DEF_ERROR_HXX */

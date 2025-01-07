@@ -15,6 +15,7 @@ cd ~/Arduino/$SKETCHNAME
 echo "Runnig from $(pwd)"
 
 bash unit_tests/run_tests.sh
+exit
 
 echo "Copy libraries to sketch folder"
 

@@ -1,11 +1,18 @@
 
-#include "utils/containers/queues.h"
+#include "queues.hpp"
 
 #include <array>
 #include <cstddef>
 #include <iostream>
 #include <cassert>
 #include <random>
+
+void context::assert_error(error::errcode code, const char* msg)
+{
+    std::cerr << "ASSERT ERROR: " << error::errname(code) << " "
+        << msg << std::endl;
+    assert(false);
+}
 
 using namespace containers;
 
@@ -118,7 +125,8 @@ int main(int argc, char* const argv[])
 
         for (auto& node: hnodes)
             {
-                heap.push(node);
+                if (!heap.is_full())
+                    { heap.push(node); }
                 assert(heap.check());
             }
 

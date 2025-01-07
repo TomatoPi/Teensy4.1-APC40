@@ -2,209 +2,175 @@
  * 
  */
 
-#include "queues.hxx"
+#ifndef DEF_STACK_HXX
+#define DEF_STACK_HXX
 
-#include <algorithm>
+#include "double_linked_list.hpp"
+#include "context.hpp"
+
+#include <array>
+#include <cstddef>
 
 namespace containers
 {
 
+/**
+ * 
+ */
+template <typename ValueT>
+class Stack: private anchored_list<ValueT>
+{
+private:
+    using base_type = anchored_list<ValueT>;
+
+public:
+    using node_type = typename base_type::node_type;
+
+    node_type* next()               { return this->front(); }
+    const node_type* next() const   { return this->front(); }
+
+    bool push(node_type& node)      { this->push_front(node); return true; }
+
+    void pop()                      { if (!is_empty()) { next()->pop_self(); } }
+
+    using base_type::is_empty;
+
+    using base_type::fast_clear;
+    using base_type::deep_clear;
+
+    using base_type::dump;
+};
+
+/**
+ * 
+ */
+template <typename ValueT>
+class Queue: private anchored_list<ValueT>
+{
+private:
+    using base_type = anchored_list<ValueT>;
+
+public:
+    using node_type = typename base_type::node_type;
+
+    node_type* next()               { return this->front(); }
+    const node_type* next() const   { return this->front(); }
+
+    bool push(node_type& node)      { this->push_back(node); return true; }
+
+    void pop()                      { if (!is_empty()) { next()->pop_self(); } }
+
+    using base_type::is_empty;
+
+    using base_type::fast_clear;
+    using base_type::deep_clear;
+
+    using base_type::dump;
+};
 
 template <typename ValueT, typename ComparatorT, size_t SMax>
-bool
-Heap<ValueT, ComparatorT, SMax>::comparator_type::operator() (const node_type* lhs, const node_type* rhs) const
+class Heap
+{
+public:
+    static constexpr const size_t MaxSize = SMax;
+    static_assert(MaxSize < context::untrusted_iteration_limit);
+
+    using type = Heap<ValueT, ComparatorT, MaxSize>;
+    using value_type = ValueT;
+
+    /**
+     * Specialise node type to prevent the priority queue from going into a bad state
+     */
+    class node_type
     {
-        return ComparatorT{}(lhs->value(), rhs->value());
-    }
+    public:
+        /** expose default constructor */
+        explicit node_type(value_type datas = value_type{})
+            : _datas{datas}, _heap{nullptr}, _index{0}
+            {}
 
-template <typename ValueT, typename ComparatorT, size_t SMax>
-typename Heap<ValueT, ComparatorT, SMax>::value_type
-Heap<ValueT, ComparatorT, SMax>::node_type::operator= (value_type val)
-    {
-        _datas = val;
-        if (is_orphan())
-            { return val; /* no heap to preserve */ }
+        /** Copy contruction or assignation not allowed */
+        node_type(const node_type&)             = delete;
+        node_type& operator= (const node_type&) = delete;
 
-        if (_heap->_size <= _index || _heap->_nodes[_index] != this)
-        {
-            context::assert_error(error::errcode::INVALID_STATE, "broken heap node");
-            return val;
-        }
+        /** Move construction or assignation not allowed */
+        node_type(node_type&& rhs)              = delete;
+        node_type& operator= (node_type&& rhs)  = delete;
 
-        /** might looks dirty but in a correct heap, shifts are no-ops */
-        _heap->shift_up(_index);
-        _heap->shift_down(_index);
+        /** removes node from the heap on object destruction */
+        ~node_type()                            { pop_self(); }
 
-        return val;
-    }
+        /** Assignement operator to override holded value, maintains heap structure */
+        value_type operator= (value_type val);
 
-template <typename ValueT, typename ComparatorT, size_t SMax>
-void
-Heap<ValueT, ComparatorT, SMax>::node_type::pop_self()
-    {
-        if (nullptr == _heap)
-            { return; }
+        /** Only expose const getter as changing value would put the heap in a bad state */
+        const value_type value() const          { return _datas; }
 
-        if (_heap->_size <= _index || _heap->_nodes[_index] != this)
-        {
-            context::assert_error(error::errcode::INVALID_STATE, "broken heap node");
-            return;
-        }
+        /** Returns true if node is not inside a heap */
+        bool is_orphan()                        { return _heap == nullptr; }
 
-        size_t last = _heap->_size -1;
-        if (last != _index)
-            {
-                std::swap(_heap->_nodes[_index], _heap->_nodes[last]);
-                _heap->_nodes[_index]->_index = _index;
-                _heap->_nodes[last] = nullptr;
-                _heap->_size -= 1;
-                _heap->shift_down(_index);
-            }
-        else
-            { 
-                _heap->_nodes[_index] = nullptr;
-                _heap->_size -= 1;
-            }
-        _heap = nullptr;
-        _index = 0;
-    }
+        /**
+         * Removes the node from it's heap, preserving it's structure
+         * @post @c is_orphan() returns true
+         */
+        void pop_self();
 
-template <typename ValueT, typename ComparatorT, size_t SMax>
-Heap<ValueT, ComparatorT, SMax>::Heap()
-    : _nodes{}, _size{0}
-    {
-        for (auto& ptr: _nodes)
-            { ptr = nullptr; }
-    }
+        friend class Heap;
 
-template <typename ValueT, typename ComparatorT, size_t SMax>
-Heap<ValueT, ComparatorT, SMax>::~Heap()
-    {
-        clear();
-    }
-
-template <typename ValueT, typename ComparatorT, size_t SMax>
-bool
-Heap<ValueT, ComparatorT, SMax>::push(node_type& node)
-    {
-        if (!node.is_orphan())
-            { return false; /* TODO: raise INVALID_ARGUMENT */ }
-        if (MaxSize <= _size)
-            { return false; /* TODO: raise MEMORY_ERROR */ }
-
-        size_t index=_size;
-        _nodes[index] = &node;
-        node._index = index;
-        node._heap = this;
-        _size += 1;
-
-        shift_up(index);
-        return true;
-    }
-
-template <typename ValueT, typename ComparatorT, size_t SMax>
-void
-Heap<ValueT, ComparatorT, SMax>::clear()
-    {
-        for (auto ptr: _nodes)
-            {
-                if (nullptr != ptr)
-                {
-                    ptr->_heap = nullptr;
-                    ptr->_index = 0;
-                }
-            }
-        _size = 0;
-    }
+    // private:
+        value_type _datas;
+        Heap* _heap;
+        size_t _index;
+    };
     
-template <typename ValueT, typename ComparatorT, size_t SMax>
-void
-Heap<ValueT, ComparatorT, SMax>::shift_up(size_t index)
+    struct comparator_type
     {
-        if (index == 0)
-            { return; /* don't shift up root */}
-        
-        const size_t parent = parentof(index);
+        bool operator() (const node_type* lhs, const node_type* rhs) const;
+    };
 
-            /* if parent < index */
-        if (comparator_type{}(_nodes[parent], _nodes[index]))
-            {
-                std::swap(_nodes[parent], _nodes[index]);
-                _nodes[parent]->_index = parent;
-                _nodes[index]->_index = index;
-                shift_up(parent);
-            }
-    }
+    Heap();
 
-template <typename ValueT, typename ComparatorT, size_t SMax>
-void
-Heap<ValueT, ComparatorT, SMax>::shift_down(size_t index)
-    {
-        if (_size <= (index+1))
-            { return; /* don't shift down last object */ }
-        
-        const size_t child = childof(index);
-        if (_size <= child)
-            { return; /* don't shift down leaves */ }
-        
-        node_type** swap_child = nullptr;
+    Heap(const Heap&)               = delete;
+    Heap& operator=(const Heap&)    = delete;
 
-        if (_size <= child+1)
-            { swap_child = &_nodes[child]; }
-        else
-        {
-            /* test if child < child+1 */
-            if (comparator_type{}(_nodes[child], _nodes[child+1]))
-                { swap_child = &_nodes[child+1]; }
-            else
-                { swap_child = &_nodes[child]; }
-        }
+    Heap(Heap&&)                    = delete;
+    Heap& operator=(Heap&&)         = delete;
 
-            /* if node < swap_child */
-        if (comparator_type{}(_nodes[index], *swap_child))
-        {
-            std::swap(_nodes[index], *swap_child);
-            std::swap(_nodes[index]->_index, (*swap_child)->_index);
-            shift_down((*swap_child)->_index);
-        }
-    }
+    ~Heap();
 
-template <typename ValueT, typename ComparatorT, size_t SMax>
-bool
-Heap<ValueT, ComparatorT, SMax>::check() const
-    {
-        if (MaxSize < _size)
-            { return false; }
-        
-        for (size_t i=0; i<_size; ++i)
-            {
-                if (nullptr == _nodes[i])
-                    { return false; }
-                if (_nodes[i]->_index != i)
-                    { return false; }
-                if (_nodes[i]->_heap != this)
-                    { return false; }
-            }
+    /**  */
+    bool is_empty() const           { return _size == 0; }
+    bool is_full() const            { return MaxSize <= _size; }
 
-        return std::is_heap(std::begin(_nodes), std::begin(_nodes) + _size, comparator_type{});
-    }
+    node_type* next()               { return is_empty() ? nullptr : _nodes[0]; }
+    const node_type* next() const   { return is_empty() ? nullptr : _nodes[0]; }
 
-template <typename ValueT, typename ComparatorT, size_t SMax>
+    bool push(node_type& node);
+
+    void clear();
+
+    void pop()                      { if (!is_empty()) { next()->pop_self(); } }
+
+    /** Integrity check, returns true if holded values are valid and forms a heap */
+    bool check() const;
+
     template <typename OutFn>
-void
-Heap<ValueT, ComparatorT, SMax>::dump(OutFn ofn) const
-    {
-        ofn("\nStack: size=%lu datas=[", _size);
-        for (const auto& ptr: _nodes)
-            {
-                // ofn(" %p:", ptr);
-                if (ptr)
-                {
-                    ptr->value().dump(ofn);
-                    ofn(":%lu", ptr->_index);
-                }
-            }
-        ofn(" ]");
-    }
+    void dump(OutFn ofn) const;
+
+private:
+
+    size_t parentof(size_t index)   { return (index-1) / 2; }
+    size_t childof(size_t index)    { return (2*index) + 1; }
+
+    void shift_up(size_t index);
+    void shift_down(size_t index);
+
+    std::array<node_type*, MaxSize> _nodes;
+    size_t _size;
+};
 
 } /* endof namespace containers */
+
+#include "_queues.hpp"
+
+#endif /* DEF_STACK_HXX */
