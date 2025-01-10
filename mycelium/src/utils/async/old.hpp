@@ -1,67 +1,4 @@
-/**
- * 
- */
 
-#ifndef DEF_ASYNC_HPP
-#define DEF_ASYNC_HPP
-
-#include "../containers/queues.hxx"
-#include "../../error.hxx"
-
-namespace async
-{
-/**
- * 
- */
-enum class async_state
-{
-    /** 
-     * Waiting for run states:
-     *  one should try launch the callback
-     */
-    Idle=0,             ///< Task has not been launched yet
-    Waiting=1,          ///< Tried to launch task but not ready
-    /**
-     * Running states
-     */
-    Launched=2,         ///< Task launched, waiting for completion
-    /**
-     * Finished states:
-     *  may have failed or not
-     */
-    Finished=3,         ///< Task done with success
-        /**
-         * Failure states
-         */
-    Failed=4,           ///< Task has failed, launching again is useless
-    Recoverable=5,      ///< Task has failed but launching it again may work
-    Timedout=6,         ///< Task has failed to run in imparted time
-
-}; /* endof enum async_state */
-
-class Coroutine
-{
-public:
-
-    virtual bool is_ready() = 0;
-    virtual void launch() = 0;
-    virtual bool is_finished() = 0;
-
-    virtual async_state state() = 0;
-
-    virtual error::status_byte error_byte() const = 0;
-};
-
-class Scheduler
-{
-public:
-
-    virtual async_state state() = 0;
-    virtual async_state update() = 0;
-
-    virtual Coroutine* next() = 0;
-    virtual error::status_byte push(Coroutine&) = 0;
-};
 
 /**
  * 
@@ -235,7 +172,3 @@ private:
     queue_type wqueue;
 
 }; /* endof class async_master */
-
-} /* endof namespace async */
-
-#endif /* DEF_ASYNC_HPP */

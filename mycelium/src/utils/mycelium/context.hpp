@@ -29,7 +29,8 @@ namespace context
  *  system reached a state which should have never been,
  * Shorthand for raise_error(EMERGENCY, code, msg).
  */
-static void assert_error(error::errcode code, const char* msg);
+static void assert_error(error::errcode code, const char* msg)
+    __attribute__((cold));
 
 /**
  * Returns a number which can be used as a sentinel to bound iterations
