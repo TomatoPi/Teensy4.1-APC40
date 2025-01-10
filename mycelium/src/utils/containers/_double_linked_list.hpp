@@ -15,7 +15,7 @@ double_linked_node<ValueT>::~double_linked_node()
     
     /** Pseudo constructor, recreates the node in-place */
 template <typename ValueT>
-void double_linked_node<ValueT>::init(value_type* val)
+void double_linked_node<ValueT>::reinit(value_type* val)
     {
         pop_self();
         _datas = val;

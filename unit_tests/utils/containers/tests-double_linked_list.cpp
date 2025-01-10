@@ -44,7 +44,7 @@ int main(int argc, char* const argv[])
         for (size_t i=0; i<NODES_COUNT; ++i)
             {
                 values[i].val = i;
-                nodes[i].init(values.data() + i);
+                nodes[i].reinit(values.data() + i);
                 nodes[i].dump(printf);
             }
 
@@ -92,12 +92,12 @@ int main(int argc, char* const argv[])
             lst.fast_clear(); assert(lst.is_empty());
             lstW.fast_clear(); assert(lstW.is_empty());
 
-            nodeA.init(&valueA); assert(nodeA.is_orphan()); assert(nodeA.value() == &valueA);
-            nodeB.init(&valueB); assert(nodeB.is_orphan()); assert(nodeB.value() == &valueB);
-            nodeC.init(&valueC); assert(nodeC.is_orphan()); assert(nodeC.value() == &valueC);
-            nodeX.init(&valueX); assert(nodeX.is_orphan()); assert(nodeX.value() == &valueX);
-            nodeY.init(&valueY); assert(nodeY.is_orphan()); assert(nodeY.value() == &valueY);
-            nodeZ.init(&valueZ); assert(nodeZ.is_orphan()); assert(nodeZ.value() == &valueZ);
+            nodeA.reinit(&valueA); assert(nodeA.is_orphan()); assert(nodeA.value() == &valueA);
+            nodeB.reinit(&valueB); assert(nodeB.is_orphan()); assert(nodeB.value() == &valueB);
+            nodeC.reinit(&valueC); assert(nodeC.is_orphan()); assert(nodeC.value() == &valueC);
+            nodeX.reinit(&valueX); assert(nodeX.is_orphan()); assert(nodeX.value() == &valueX);
+            nodeY.reinit(&valueY); assert(nodeY.is_orphan()); assert(nodeY.value() == &valueY);
+            nodeZ.reinit(&valueZ); assert(nodeZ.is_orphan()); assert(nodeZ.value() == &valueZ);
         };
 
     clear_all();

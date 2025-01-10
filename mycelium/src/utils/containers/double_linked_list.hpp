@@ -60,8 +60,8 @@ public:
     /** Destructor: remove node from any linked list to prevent weird behavior */
     ~double_linked_node();
     
-    /** Pseudo constructor, recreates a fresh node in-place */
-    void init(value_type* val);
+    /** Pseudo constructor, recreates a fresh node in-place, pops from owning list */
+    void reinit(value_type* val);
 
     /** Assignement opertor to override holded value */
     value_type* operator= (value_type* val);

@@ -9,7 +9,6 @@
 namespace containers
 {
 
-
 template <typename ValueT, typename ComparatorT, size_t SMax>
 bool
 Heap<ValueT, ComparatorT, SMax>::comparator_type::operator() (const node_type* lhs, const node_type* rhs) const
@@ -21,17 +20,14 @@ template <typename ValueT, typename ComparatorT, size_t SMax>
 typename Heap<ValueT, ComparatorT, SMax>::value_type
 Heap<ValueT, ComparatorT, SMax>::node_type::operator= (value_type val)
     {
-        _datas = val;
         if (is_orphan())
             { return val; /* no heap to preserve */ }
 
-        if (_heap->_size <= _index || _heap->_nodes[_index] != this)
-        {
-            context::assert_error(error::errcode::INVALID_STATE, "@heap::node::operator=: broken node");
-            return val;
-        }
+        if (!check())
+            { return val; /* asserts raised by check */}
 
         /** might looks dirty but in a correct heap, shifts are no-ops */
+        _datas = val;
         _heap->shift_up(_index);
         _heap->shift_down(_index);
 
@@ -45,11 +41,8 @@ Heap<ValueT, ComparatorT, SMax>::node_type::pop_self()
         if (nullptr == _heap)
             { return; }
 
-        if (_heap->_size <= _index || _heap->_nodes[_index] != this)
-        {
-            context::assert_error(error::errcode::INVALID_STATE, "@heap::node::pop_self: broken node");
-            return;
-        }
+        if (!check())
+            { return; /* asserts raised by check */}
 
         size_t last = _heap->_size -1;
         if (last != _index)
@@ -69,6 +62,24 @@ Heap<ValueT, ComparatorT, SMax>::node_type::pop_self()
         _index = 0;
     }
 
+
+template <typename ValueT, typename ComparatorT, size_t SMax>
+bool
+Heap<ValueT, ComparatorT, SMax>::node_type::check () const
+    {
+        if (_heap->_size <= _index)
+        {
+            context::assert_error(error::errcode::INVALID_STATE, "@heap::node::operator=: broken node: index overflow");
+            return false;
+        }
+        if (_heap->_nodes[_index] != this)
+        {
+            context::assert_error(error::errcode::INVALID_STATE, "@heap::node::operator=: broken node: index missmatch");
+            return false;
+        }
+        return true;
+    }
+
 template <typename ValueT, typename ComparatorT, size_t SMax>
 Heap<ValueT, ComparatorT, SMax>::Heap()
     : _nodes{}, _size{0}
@@ -80,7 +91,7 @@ Heap<ValueT, ComparatorT, SMax>::Heap()
 template <typename ValueT, typename ComparatorT, size_t SMax>
 Heap<ValueT, ComparatorT, SMax>::~Heap()
     {
-        clear();
+        deep_clear();
     }
 
 template <typename ValueT, typename ComparatorT, size_t SMax>
@@ -110,7 +121,7 @@ Heap<ValueT, ComparatorT, SMax>::push(node_type& node)
 
 template <typename ValueT, typename ComparatorT, size_t SMax>
 void
-Heap<ValueT, ComparatorT, SMax>::clear()
+Heap<ValueT, ComparatorT, SMax>::deep_clear()
     {
         for (auto ptr: _nodes)
         {

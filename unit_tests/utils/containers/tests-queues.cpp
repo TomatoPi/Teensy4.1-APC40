@@ -55,11 +55,11 @@ int main(int argc, char* const argv[])
             for (size_t i=0; i<nodes.size(); ++i)
                 {
                     values[i].val = i;
-                    nodes[i].init(values.data() +i);
+                    nodes[i].reinit(values.data() +i);
                     assert(nodes[i].is_empty());
                 }
 
-            heap.clear();
+            heap.deep_clear();
 
             assert(stack.is_empty());
             assert(queue.is_empty());

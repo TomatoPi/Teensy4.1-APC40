@@ -84,6 +84,8 @@ public:
     class node_type
     {
     public:
+        friend class Heap;
+
         /** expose default constructor */
         explicit node_type(value_type datas = value_type{})
             : _datas{datas}, _heap{nullptr}, _index{0}
@@ -100,6 +102,9 @@ public:
         /** removes node from the heap on object destruction */
         ~node_type()                            { pop_self(); }
 
+        /** Pseudo constructor, changes holded value and pop from owning list */
+        void reinit(value_type val)             { pop_self(); _datas = val; }
+
         /** Assignement operator to override holded value, maintains heap structure */
         value_type operator= (value_type val);
 
@@ -115,9 +120,13 @@ public:
          */
         void pop_self();
 
-        friend class Heap;
+        /**
+         * Returns true if node is in a valid state
+         *  raises an assert error if not
+         */
+        bool check() const;
 
-    // private:
+    private:
         value_type _datas;
         Heap* _heap;
         size_t _index;
@@ -147,7 +156,8 @@ public:
 
     bool push(node_type& node);
 
-    void clear();
+    void fast_clear()               { deep_clear(); /* no suitable algo for fast clear */ }
+    void deep_clear();
 
     void pop()                      { if (!is_empty()) { next()->pop_self(); } }
 
